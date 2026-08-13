@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="AI-powered text summarization application"
+    >
+
+    <title>AI Text Summarizer</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="navbar-content">
+
+            <a href="/" class="brand">
+                Text Summarizer
+            </a>
+
+            <nav class="navigation">
+                <a href="/">Home</a>
+
+                <a
+                    href="/docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    API Documentation
+                </a>
+            </nav>
+
+        </div>
+    </header>
+
+    <main class="main-container">
+
+        <section class="hero">
+            <p class="hero-label">
+                AI-Powered Text Summarization
+            </p>
+
+            <h1>
+                Convert lengthy content into
+                <span>clear and concise summaries.</span>
+            </h1>
+
+            <p class="hero-description">
+                Enter an article, report, conversation, or document and
+                generate a focused summary using a fine-tuned language model.
+            </p>
+        </section>
+
+        <section class="summarizer-card">
+
+            <div class="card-header">
+                <div>
+                    <p class="section-label">Input</p>
+                    <h2>Text to summarize</h2>
+                </div>
+
+                <button
+                    type="button"
+                    id="clear-button"
+                    class="secondary-button"
+                >
+                    Clear
+                </button>
+            </div>
+
+            <textarea
+                id="text-input"
+                maxlength="12000"
+                placeholder="Paste or type the content you want to summarize..."
+            ></textarea>
+
+            <div class="textarea-footer">
+                <p>
+                    Complete and well-structured text usually produces
+                    better results.
+                </p>
+
+                <p id="character-count">
+                    0 / 12,000
+                </p>
+            </div>
+
+            <div
+                id="error-message"
+                class="error-message hidden"
+            ></div>
+
+            <div class="action-area">
+                <p class="processing-message">
+                    Your input will be processed by the summarization model.
+                </p>
+
+                <button
+                    type="button"
+                    id="summarize-button"
+                    class="primary-button"
+                >
+                    <span id="button-text">
+                        Generate Summary
+                    </span>
+
+                    <span
+                        id="loader"
+                        class="loader"
+                    ></span>
+                </button>
+            </div>
+
+        </section>
+
+        <section
+            id="result-card"
+            class="result-card hidden"
+        >
+
+            <div class="card-header">
+                <div>
+                    <p class="section-label result-label">
+                        Result
+                    </p>
+
+                    <h2>Generated summary</h2>
+                </div>
+
+                <button
+                    type="button"
+                    id="copy-button"
+                    class="secondary-button"
+                >
+                    Copy
+                </button>
+            </div>
+
+            <div
+                id="summary-output"
+                class="summary-output"
+            ></div>
+
+        </section>
+
+        <section class="features">
+
+            <article class="feature-card">
+                <h3>Efficient Processing</h3>
+
+                <p>
+                    Reduce lengthy content into a shorter form without
+                    manually reviewing every sentence.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>Clear Output</h3>
+
+                <p>
+                    Generate readable summaries that preserve the main
+                    information from the original text.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>Transformer Model</h3>
+
+                <p>
+                    Use a fine-tuned transformer model to understand and
+                    summarize the submitted content.
+                </p>
+            </article>
+
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>
+            AI Text Summarizer built with FastAPI and Hugging Face Transformers
+        </p>
+    </footer>
+
+    <script>
+        const textInput =
+            document.getElementById("text-input");
+
+        const characterCount =
+            document.getElementById("character-count");
+
+        const clearButton =
+            document.getElementById("clear-button");
+
+        const summarizeButton =
+            document.getElementById("summarize-button");
+
+        const buttonText =
+            document.getElementById("button-text");
+
+        const loader =
+            document.getElementById("loader");
+
+        const resultCard =
+            document.getElementById("result-card");
+
+        const summaryOutput =
+            document.getElementById("summary-output");
+
+        const copyButton =
+            document.getElementById("copy-button");
+
+        const errorMessage =
+            document.getElementById("error-message");
+
+
+        function updateCharacterCount() {
+            const length = textInput.value.length;
+
+            characterCount.textContent =
+                `${length.toLocaleString()} / 12,000`;
+        }
+
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove("hidden");
+        }
+
+
+        function hideError() {
+            errorMessage.textContent = "";
+            errorMessage.classList.add("hidden");
+        }
+
+
+        function setLoading(isLoading) {
+            summarizeButton.disabled = isLoading;
+
+            if (isLoading) {
+                buttonText.textContent = "Generating Summary";
+                loader.style.display = "inline-block";
+            } else {
+                buttonText.textContent = "Generate Summary";
+                loader.style.display = "none";
+            }
+        }
+
+
+        textInput.addEventListener(
+            "input",
+            updateCharacterCount
+        );
+
+
+        clearButton.addEventListener("click", function () {
+            textInput.value = "";
+            summaryOutput.textContent = "";
+
+            resultCard.classList.add("hidden");
+
+            hideError();
+            updateCharacterCount();
+
+            textInput.focus();
+        });
+
+
+        summarizeButton.addEventListener(
+            "click",
+            async function () {
+                const text = textInput.value.trim();
+
+                hideError();
+
+                if (!text) {
+                    showError(
+                        "Please enter some text before generating a summary."
+                    );
+
+                    textInput.focus();
+                    return;
+                }
+
+                setLoading(true);
+
+                try {
+                    const response = await fetch(
+                        `/predict?text=${encodeURIComponent(text)}`
+                    );
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        const message =
+                            data.detail ||
+                            "The summary could not be generated.";
+
+                        throw new Error(message);
+                    }
+
+                    let summary = data.summary;
+
+                    if (Array.isArray(summary)) {
+                        summary = summary.join(" ");
+                    }
+
+                    if (
+                        typeof summary === "object" &&
+                        summary !== null
+                    ) {
+                        summary = JSON.stringify(
+                            summary,
+                            null,
+                            2
+                        );
+                    }
+
+                    if (!summary) {
+                        throw new Error(
+                            "The model returned an empty summary."
+                        );
+                    }
+
+                    summaryOutput.textContent = summary;
+                    resultCard.classList.remove("hidden");
+
+                    resultCard.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+
+                } catch (error) {
+                    resultCard.classList.add("hidden");
+
+                    showError(
+                        error.message ||
+                        "An unexpected error occurred."
+                    );
+
+                    console.error(error);
+
+                } finally {
+                    setLoading(false);
+                }
+            }
+        );
+
+
+        copyButton.addEventListener(
+            "click",
+            async function () {
+                const summary =
+                    summaryOutput.textContent.trim();
+
+                if (!summary) {
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(
+                        summary
+                    );
+
+                    copyButton.textContent = "Copied";
+
+                    setTimeout(function () {
+                        copyButton.textContent = "Copy";
+                    }, 1500);
+
+                } catch (error) {
+                    showError(
+                        "The summary could not be copied."
+                    );
+
+                    console.error(error);
+                }
+            }
+        );
+
+
+        updateCharacterCount();
+    </script>
+
+</body>
+</html>
